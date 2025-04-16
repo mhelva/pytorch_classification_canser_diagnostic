@@ -198,4 +198,63 @@ plt.ylabel('Accuracy')
 plt.title('Training and Test Accuracy Curve')
 plt.legend()
 plt.grid(True)
+plt.savefig('accuracy_curve.png')
 plt.show()
+
+from sklearn.metrics import (
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    classification_report,
+    roc_curve,
+    auc,
+    precision_recall_curve
+)
+import matplotlib.pyplot as plt
+import torch
+
+
+def evaluate_model_performance(model, X_test_tensor, y_test_tensor, class_names=["Class 0", "Class 1"]):
+    model.eval()
+    with torch.no_grad():
+        outputs = model(X_test_tensor)
+        probs = torch.softmax(outputs, dim=1)[:, 1].numpy()
+        preds = torch.argmax(outputs, dim=1).numpy()
+        true = y_test_tensor.numpy()
+
+    # Confusion Matrix
+    cm = confusion_matrix(true, preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    plt.figure(figsize=(6, 6))
+    disp.plot(cmap='Blues', values_format='d')
+    plt.title("Confusion Matrix")
+    plt.grid(False)
+    plt.show()
+
+    # Classification Report
+    print("Classification Report:")
+    print(classification_report(true, preds, target_names=class_names))
+
+    # ROC Curve
+    fpr, tpr, _ = roc_curve(true, probs)
+    roc_auc = auc(fpr, tpr)
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.2f}")
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+    plt.legend(loc='lower right')
+    plt.grid(True)
+    plt.show()
+
+    # Precision-Recall Curve
+    precision, recall, _ = precision_recall_curve(true, probs)
+    plt.figure(figsize=(8, 6))
+    plt.plot(recall, precision, marker='.')
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title("Precision-Recall Curve")
+    plt.grid(True)
+    plt.show()
+
+evaluate_model_performance(model, X_test_tensor, y_test_tensor, class_names=["Benign", "Malignant"])
